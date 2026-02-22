@@ -1,0 +1,14 @@
+apiVersion: v2
+name: build-operator
+description: BuilderHub BuildKit Operator - BuildKit as a Service on bare-metal Kubernetes
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - buildkit
+  - builderhub
+  - kubernetes
+  - operator
+home: https://builder-hub.dev
+sources:
+  - https://github.com/builderhub/build-operator

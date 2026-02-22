@@ -1,0 +1,92 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-builder-hub-dev-v1alpha1-buildkitbuilder
+  failurePolicy: Fail
+  name: mbuildkitbuilder.kb.io
+  rules:
+  - apiGroups:
+    - builder-hub.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - buildkitbuilders
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-builder-hub-dev-v1alpha1-buildkitbuildertemplate
+  failurePolicy: Fail
+  name: mbuildkitbuildertemplate.kb.io
+  rules:
+  - apiGroups:
+    - builder-hub.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - buildkitbuildertemplates
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-builder-hub-dev-v1alpha1-buildkitbuilder
+  failurePolicy: Fail
+  name: vbuildkitbuilder.kb.io
+  rules:
+  - apiGroups:
+    - builder-hub.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - buildkitbuilders
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-builder-hub-dev-v1alpha1-buildkitbuildertemplate
+  failurePolicy: Fail
+  name: vbuildkitbuildertemplate.kb.io
+  rules:
+  - apiGroups:
+    - builder-hub.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - buildkitbuildertemplates
+  sideEffects: None

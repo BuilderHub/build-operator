@@ -1,0 +1,36 @@
+# BuilderHub BuildKit Operator Helm values
+
+operator:
+  image:
+    repository: ghcr.io/builderhub/build-operator
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+
+  # Leader election for HA
+  leaderElection: true
+
+# Install CRDs (set false if managing CRDs separately)
+installCRDs: true
+
+# Namespace for the operator
+namespaceOverride: ""
+
+# ServiceAccount
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# RBAC
+rbac:
+  create: true

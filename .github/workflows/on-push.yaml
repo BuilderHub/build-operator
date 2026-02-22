@@ -15,7 +15,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: builderhub/actions-internal/.github/workflows/build-push-image.yaml@main
+    uses: builderhub/actions-internal/.github/workflows/build-push-image.yaml@v1.0.1
     with:
       build-type: dockerfile
       image-name: build-operator

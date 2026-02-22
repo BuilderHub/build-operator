@@ -1,0 +1,25 @@
+name: On Push
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-push:
+    permissions:
+      contents: read
+      packages: write
+    uses: builderhub/actions-internal/.github/workflows/build-push-image.yaml@v1.0.1
+    with:
+      build-type: dockerfile
+      image-name: build-operator
+      dockerfile: Dockerfile
+      context: .
+    secrets:
+      registry-password: ${{ secrets.GITHUB_TOKEN }}

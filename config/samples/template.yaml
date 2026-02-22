@@ -1,0 +1,26 @@
+# BuildkitBuilderTemplate - cluster-scoped blueprint
+# Multi-arch: arch sets nodeSelector kubernetes.io/arch
+apiVersion: builder-hub.dev/v1alpha1
+kind: BuildkitBuilderTemplate
+metadata:
+  name: default-template
+spec:
+  buildkitImage: moby/buildkit:rootless
+  rootless: true
+  arch: amd64
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "4"
+      memory: "8Gi"
+  nodeSelector:
+    kubernetes.io/arch: amd64
+  cacheConfig:
+    type: pvc
+    pvc:
+      storageClassName: ""
+      size: "100Gi"
+      accessModes:
+        - ReadWriteOnce

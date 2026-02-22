@@ -1,0 +1,24 @@
+# Patch to proxy metrics through the manager container for multi-arch
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      containers:
+      - name: kube-rbac-proxy
+        args:
+        - "--secure-listen-address=0.0.0.0:8443"
+        - "--upstream=http://127.0.0.1:8080/"
+        - "--logtostderr=true"
+        - "--v=0"
+        ports:
+        - containerPort: 8443
+          protocol: TCP
+          name: https
+        resources:
+          requests:
+            cpu: 100m
+            memory: 90Mi

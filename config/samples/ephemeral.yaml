@@ -1,0 +1,13 @@
+# Ephemeral BuildkitBuilder - one pod per build, auto-cleanup, perfect isolation
+# CI jobs can own ephemeral builders via ownerReferences
+apiVersion: builder-hub.dev/v1alpha1
+kind: BuildkitBuilder
+metadata:
+  name: ephemeral-ci
+  namespace: buildkit
+spec:
+  templateRef: default-template
+  mode: ephemeral
+  labels:
+    builder-hub.dev/pool: ci
+    builder-hub.dev/arch: amd64

@@ -1,0 +1,13 @@
+# Persistent BuildkitBuilder - always-on, shared across users, stable PVC cache
+apiVersion: builder-hub.dev/v1alpha1
+kind: BuildkitBuilder
+metadata:
+  name: persistent-shared
+  namespace: buildkit
+spec:
+  templateRef: default-template
+  mode: persistent
+  replicas: 1
+  labels:
+    builder-hub.dev/pool: shared
+    builder-hub.dev/arch: amd64

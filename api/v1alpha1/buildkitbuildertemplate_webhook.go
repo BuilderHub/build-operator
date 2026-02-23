@@ -1,13 +1,12 @@
 package v1alpha1
 
 import (
+	"context"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -16,56 +15,56 @@ var buildkitbuildertemplatelog = logf.Log.WithName("buildkitbuildertemplate-reso
 
 // SetupWebhookWithManager registers the webhook
 func (r *BuildkitBuilderTemplate) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+	return ctrl.NewWebhookManagedBy(mgr, r).
 		Complete()
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to disable mutation.
 // +kubebuilder:webhook:path=/mutate-builder-hub-dev-v1alpha1-buildkitbuildertemplate,mutating=true,failurePolicy=fail,sideEffects=None,groups=builder-hub.dev,resources=buildkitbuildertemplates,verbs=create;update,versions=v1alpha1,name=mbuildkitbuildertemplate.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &BuildkitBuilderTemplate{}
+var _ admission.Defaulter[*BuildkitBuilderTemplate] = (*BuildkitBuilderTemplate)(nil)
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *BuildkitBuilderTemplate) Default() {
-	buildkitbuildertemplatelog.Info("default", "name", r.Name)
-	if r.Spec.BuildkitImage == "" {
-		if r.Spec.Rootless {
-			r.Spec.BuildkitImage = "moby/buildkit:v0.18.0-rootless"
+// Default implements admission.Defaulter so a webhook will be registered for the type
+func (r *BuildkitBuilderTemplate) Default(ctx context.Context, obj *BuildkitBuilderTemplate) error {
+	buildkitbuildertemplatelog.Info("default", "name", obj.Name)
+	if obj.Spec.BuildkitImage == "" {
+		if obj.Spec.Rootless {
+			obj.Spec.BuildkitImage = "moby/buildkit:v0.18.0-rootless"
 		} else {
-			r.Spec.BuildkitImage = "moby/buildkit:v0.18.0"
+			obj.Spec.BuildkitImage = "moby/buildkit:v0.18.0"
 		}
 	}
-	if r.Spec.Arch == "" {
-		r.Spec.Arch = "amd64"
+	if obj.Spec.Arch == "" {
+		obj.Spec.Arch = "amd64"
 	}
-	if r.Spec.CacheConfig.Type == CacheTypePVC && r.Spec.CacheConfig.PVC != nil {
-		if len(r.Spec.CacheConfig.PVC.AccessModes) == 0 {
-			r.Spec.CacheConfig.PVC.AccessModes = []string{string(corev1.ReadWriteOnce)}
+	if obj.Spec.CacheConfig.Type == CacheTypePVC && obj.Spec.CacheConfig.PVC != nil {
+		if len(obj.Spec.CacheConfig.PVC.AccessModes) == 0 {
+			obj.Spec.CacheConfig.PVC.AccessModes = []string{string(corev1.ReadWriteOnce)}
 		}
 	}
+	return nil
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to disable validation.
 // +kubebuilder:webhook:path=/validate-builder-hub-dev-v1alpha1-buildkitbuildertemplate,mutating=false,failurePolicy=fail,sideEffects=None,groups=builder-hub.dev,resources=buildkitbuildertemplates,verbs=create;update,versions=v1alpha1,name=vbuildkitbuildertemplate.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &BuildkitBuilderTemplate{}
+var _ admission.Validator[*BuildkitBuilderTemplate] = (*BuildkitBuilderTemplate)(nil)
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *BuildkitBuilderTemplate) ValidateCreate() (admission.Warnings, error) {
-	buildkitbuildertemplatelog.Info("validate create", "name", r.Name)
-	return nil, r.validate()
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type
+func (r *BuildkitBuilderTemplate) ValidateCreate(ctx context.Context, obj *BuildkitBuilderTemplate) (admission.Warnings, error) {
+	buildkitbuildertemplatelog.Info("validate create", "name", obj.Name)
+	return nil, obj.validate()
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *BuildkitBuilderTemplate) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	buildkitbuildertemplatelog.Info("validate update", "name", r.Name)
-	return nil, r.validate()
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type
+func (r *BuildkitBuilderTemplate) ValidateUpdate(ctx context.Context, old, new *BuildkitBuilderTemplate) (admission.Warnings, error) {
+	buildkitbuildertemplatelog.Info("validate update", "name", new.Name)
+	return nil, new.validate()
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *BuildkitBuilderTemplate) ValidateDelete() (admission.Warnings, error) {
-	buildkitbuildertemplatelog.Info("validate delete", "name", r.Name)
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type
+func (r *BuildkitBuilderTemplate) ValidateDelete(ctx context.Context, obj *BuildkitBuilderTemplate) (admission.Warnings, error) {
+	buildkitbuildertemplatelog.Info("validate delete", "name", obj.Name)
 	return nil, nil
 }
 

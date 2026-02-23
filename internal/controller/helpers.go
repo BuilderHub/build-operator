@@ -213,8 +213,17 @@ func (r *BuildkitBuilderReconciler) updateStatus(ctx context.Context, b *buildki
 	b.Status.NodePort = nodePort
 	b.Status.ReadyReplicas = readyReplicas
 	b.Status.DesiredReplicas = desiredReplicas
-	setCondition(&b.Status, buildkitv1alpha1.ConditionReady, phase == "Ready", "Builder ready")
-	setCondition(&b.Status, buildkitv1alpha1.ConditionEndpoint, endpoint != "", "Endpoint set")
+	ready := phase == "Ready"
+	readyReason := "NotReady"
+	if ready {
+		readyReason = "Ready"
+	}
+	setCondition(&b.Status, buildkitv1alpha1.ConditionReady, ready, readyReason, "Builder ready")
+	epReason := "NotSet"
+	if endpoint != "" {
+		epReason = "EndpointSet"
+	}
+	setCondition(&b.Status, buildkitv1alpha1.ConditionEndpoint, endpoint != "", epReason, "Endpoint set")
 	if err := r.Status().Update(ctx, b); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -229,22 +238,31 @@ func (r *BuildkitBuilderReconciler) updateStatusWithLastScaled(ctx context.Conte
 	b.Status.ReadyReplicas = readyReplicas
 	b.Status.DesiredReplicas = desiredReplicas
 	b.Status.LastScaledAt = lastScaled
-	setCondition(&b.Status, buildkitv1alpha1.ConditionReady, phase == "Ready", "Builder ready")
-	setCondition(&b.Status, buildkitv1alpha1.ConditionLastScaled, true, "Last scaled")
+	ready := phase == "Ready"
+	readyReason := "NotReady"
+	if ready {
+		readyReason = "Ready"
+	}
+	setCondition(&b.Status, buildkitv1alpha1.ConditionReady, ready, readyReason, "Builder ready")
+	setCondition(&b.Status, buildkitv1alpha1.ConditionLastScaled, true, "Scaled", "Last scaled")
 	if err := r.Status().Update(ctx, b); err != nil {
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
 }
 
-func setCondition(status *buildkitv1alpha1.BuildkitBuilderStatus, condType string, statusVal bool, message string) {
+func setCondition(status *buildkitv1alpha1.BuildkitBuilderStatus, condType string, statusVal bool, reason string, message string) {
 	statusStr := "False"
 	if statusVal {
 		statusStr = "True"
 	}
+	if reason == "" {
+		reason = "Unknown"
+	}
 	for i := range status.Conditions {
 		if status.Conditions[i].Type == condType {
 			status.Conditions[i].Status = metav1.ConditionStatus(statusStr)
+			status.Conditions[i].Reason = reason
 			status.Conditions[i].Message = message
 			status.Conditions[i].LastTransitionTime = metav1.Now()
 			return
@@ -253,6 +271,7 @@ func setCondition(status *buildkitv1alpha1.BuildkitBuilderStatus, condType strin
 	status.Conditions = append(status.Conditions, metav1.Condition{
 		Type:               condType,
 		Status:             metav1.ConditionStatus(statusStr),
+		Reason:             reason,
 		Message:            message,
 		LastTransitionTime: metav1.Now(),
 	})

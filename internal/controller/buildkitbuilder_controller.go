@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -395,13 +396,19 @@ func (r *BuildkitBuilderReconciler) reconcileSleepy(ctx context.Context, b *buil
 // HELPERS
 // ---------------------------------------------------------------------------
 
+// validLabelValue matches Kubernetes label value: alphanumeric, '-', '_', '.', empty or single segment.
+var validLabelValueRegex = regexp.MustCompile(`^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$`)
+
 func labelsForBuilder(b *buildkitv1alpha1.BuildkitBuilder, mode string) map[string]string {
 	m := map[string]string{
 		"builder-hub.dev/builder": b.Name,
 		"builder-hub.dev/mode":    mode,
 	}
 	for k, v := range b.Spec.Labels {
-		m[k] = v
+		if validLabelValueRegex.MatchString(v) {
+			m[k] = v
+		}
+		// Skip labels with invalid values (e.g. platform: "linux/amd64") so Service selector stays valid
 	}
 	return m
 }

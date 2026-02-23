@@ -54,8 +54,8 @@ build: generate ## Build manager binary
 	$(GO) build -o $(BIN_DIR)/manager cmd/main.go
 
 .PHONY: run
-run: manifests generate ## Run against the configured Kubernetes cluster
-	$(GO) run ./cmd/main.go
+run: manifests generate ## Run against the configured Kubernetes cluster (--leader-elect=false for local dev)
+	$(GO) run ./cmd/main.go --leader-elect=false
 
 ##@ Docker
 .PHONY: docker-build

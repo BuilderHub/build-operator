@@ -1,22 +1,12 @@
-# BuildkitBuilderTemplate - cluster-scoped blueprint
-# Multi-arch: arch sets nodeSelector kubernetes.io/arch
+# BuildkitBuilderTemplate - example cluster-scoped blueprint (not applied by Tilt by default).
+# See builder-templates.yaml for builder-small through builder-xlarge.
 apiVersion: builder-hub.dev/v1alpha1
 kind: BuildkitBuilderTemplate
 metadata:
   name: default-template
 spec:
-  buildkitImage: moby/buildkit:rootless
+  buildkitImage: moby/buildkit:master-rootless
   rootless: true
-  arch: amd64
-  resources:
-    requests:
-      cpu: "500m"
-      memory: "1Gi"
-    limits:
-      cpu: "4"
-      memory: "8Gi"
-  nodeSelector:
-    kubernetes.io/arch: amd64
   cacheConfig:
     type: pvc
     pvc:

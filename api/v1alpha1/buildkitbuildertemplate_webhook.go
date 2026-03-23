@@ -29,13 +29,10 @@ func (r *BuildkitBuilderTemplate) Default(ctx context.Context, obj *BuildkitBuil
 	buildkitbuildertemplatelog.Info("default", "name", obj.Name)
 	if obj.Spec.BuildkitImage == "" {
 		if obj.Spec.Rootless {
-			obj.Spec.BuildkitImage = "moby/buildkit:v0.18.0-rootless"
+			obj.Spec.BuildkitImage = "moby/buildkit:master-rootless"
 		} else {
-			obj.Spec.BuildkitImage = "moby/buildkit:v0.18.0"
+			obj.Spec.BuildkitImage = "moby/buildkit:master"
 		}
-	}
-	if obj.Spec.Arch == "" {
-		obj.Spec.Arch = "amd64"
 	}
 	if obj.Spec.CacheConfig.Type == CacheTypePVC && obj.Spec.CacheConfig.PVC != nil {
 		if len(obj.Spec.CacheConfig.PVC.AccessModes) == 0 {

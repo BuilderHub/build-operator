@@ -40,9 +40,9 @@ type CacheConfig struct {
 
 // BuildkitBuilderTemplateSpec defines the desired state of BuildkitBuilderTemplate
 type BuildkitBuilderTemplateSpec struct {
-	// BuildkitImage is the BuildKit daemon image (default: moby/buildkit:v0.18.0-rootless)
+	// BuildkitImage is the BuildKit daemon image (default: moby/buildkit:master-rootless)
 	// +optional
-	// +kubebuilder:default="moby/buildkit:v0.18.0-rootless"
+	// +kubebuilder:default="moby/buildkit:master-rootless"
 	BuildkitImage string `json:"buildkitImage,omitempty"`
 
 	// Rootless runs BuildKit in rootless mode for security (default: true)
@@ -50,7 +50,7 @@ type BuildkitBuilderTemplateSpec struct {
 	// +kubebuilder:default=true
 	Rootless bool `json:"rootless,omitempty"`
 
-	// Resources defines CPU/memory/ephemeral-storage requests and limits
+	// Resources for the buildkitd container. Omit for no requests/limits (BestEffort).
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
@@ -74,11 +74,10 @@ type BuildkitBuilderTemplateSpec struct {
 	// CacheConfig defines the cache backend (pvc, none, or s3)
 	CacheConfig CacheConfig `json:"cacheConfig"`
 
-	// Arch is the target architecture for multi-arch builds (amd64, arm64).
-	// Used to set nodeSelector kubernetes.io/arch.
+	// Arch pins scheduling to kubernetes.io/arch (amd64 or arm64).
+	// Empty means no arch nodeSelector — required for multi-arch images on mixed clusters (e.g. arm64 Kind).
 	// +optional
 	// +kubebuilder:validation:Enum=amd64;arm64
-	// +kubebuilder:default="amd64"
 	Arch string `json:"arch,omitempty"`
 }
 

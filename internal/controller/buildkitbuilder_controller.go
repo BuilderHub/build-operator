@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -485,20 +484,6 @@ func (r *BuildkitBuilderReconciler) buildPodSpec(spec *buildkitv1alpha1.Buildkit
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: "s3-creds", MountPath: "/etc/buildkit/s3-creds", ReadOnly: true})
 	}
 
-	resources := spec.Resources
-	if len(resources.Requests) == 0 && len(resources.Limits) == 0 {
-		resources = corev1.ResourceRequirements{
-			Requests: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("500m"),
-				corev1.ResourceMemory: resource.MustParse("1Gi"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("4"),
-				corev1.ResourceMemory: resource.MustParse("8Gi"),
-			},
-		}
-	}
-
 	return corev1.PodSpec{
 		SecurityContext:  securityContext,
 		NodeSelector:     nodeSelector,
@@ -516,7 +501,7 @@ func (r *BuildkitBuilderReconciler) buildPodSpec(spec *buildkitv1alpha1.Buildkit
 					{Name: "buildkit", ContainerPort: 1234},
 					{Name: "metrics", ContainerPort: 1235},
 				},
-				Resources:    resources,
+				Resources:    spec.Resources,
 				VolumeMounts: volumeMounts,
 				LivenessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{

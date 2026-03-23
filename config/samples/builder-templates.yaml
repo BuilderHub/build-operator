@@ -1,24 +1,20 @@
 # Builder size templates aligned with frontend BUILDER_SIZES (small, medium, large, xlarge).
 # Referenced by BuildkitBuilder.spec.templateRef (e.g. builder-small).
 # Applied by build-operator Tiltfile so clusters have these templates before creating builders.
+#
+# No arch/nodeSelector pin: moby/buildkit rootless images are multi-arch. Pinning amd64 breaks
+# buildkitImage: master-rootless tracks BuildKit main (expect churn vs semver tags).
+# local clusters on arm64 (Kind / Docker Desktop on Apple Silicon).
+# No spec.resources: buildkitd runs with no CPU/memory requests or limits (BestEffort); set
+# spec.resources on a custom template when you need QoS guarantees.
 ---
 apiVersion: builder-hub.dev/v1alpha1
 kind: BuildkitBuilderTemplate
 metadata:
   name: builder-small
 spec:
-  buildkitImage: moby/buildkit:v0.18.0-rootless
+  buildkitImage: moby/buildkit:master-rootless
   rootless: true
-  arch: amd64
-  resources:
-    requests:
-      cpu: "2"
-      memory: "4Gi"
-    limits:
-      cpu: "2"
-      memory: "4Gi"
-  nodeSelector:
-    kubernetes.io/arch: amd64
   cacheConfig:
     type: pvc
     pvc:
@@ -32,18 +28,8 @@ kind: BuildkitBuilderTemplate
 metadata:
   name: builder-medium
 spec:
-  buildkitImage: moby/buildkit:v0.18.0-rootless
+  buildkitImage: moby/buildkit:master-rootless
   rootless: true
-  arch: amd64
-  resources:
-    requests:
-      cpu: "4"
-      memory: "8Gi"
-    limits:
-      cpu: "4"
-      memory: "8Gi"
-  nodeSelector:
-    kubernetes.io/arch: amd64
   cacheConfig:
     type: pvc
     pvc:
@@ -57,18 +43,8 @@ kind: BuildkitBuilderTemplate
 metadata:
   name: builder-large
 spec:
-  buildkitImage: moby/buildkit:v0.18.0-rootless
+  buildkitImage: moby/buildkit:master-rootless
   rootless: true
-  arch: amd64
-  resources:
-    requests:
-      cpu: "8"
-      memory: "16Gi"
-    limits:
-      cpu: "8"
-      memory: "16Gi"
-  nodeSelector:
-    kubernetes.io/arch: amd64
   cacheConfig:
     type: pvc
     pvc:
@@ -82,18 +58,8 @@ kind: BuildkitBuilderTemplate
 metadata:
   name: builder-xlarge
 spec:
-  buildkitImage: moby/buildkit:v0.18.0-rootless
+  buildkitImage: moby/buildkit:master-rootless
   rootless: true
-  arch: amd64
-  resources:
-    requests:
-      cpu: "16"
-      memory: "32Gi"
-    limits:
-      cpu: "16"
-      memory: "32Gi"
-  nodeSelector:
-    kubernetes.io/arch: amd64
   cacheConfig:
     type: pvc
     pvc:

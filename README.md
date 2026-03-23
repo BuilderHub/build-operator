@@ -83,7 +83,7 @@ kind: BuildkitBuilderTemplate
 metadata:
   name: default-template
 spec:
-  buildkitImage: moby/buildkit:v0.18.0-rootless
+  buildkitImage: moby/buildkit:master-rootless
   rootless: true
   arch: amd64
   cacheConfig:

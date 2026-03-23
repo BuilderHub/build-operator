@@ -9,5 +9,5 @@ spec:
   mode: persistent
   replicas: 1
   labels:
-    builder-hub.dev/pool: shared
-    builder-hub.dev/arch: amd64
+    builder.builder-hub.dev/pool: shared
+    builder.builder-hub.dev/arch: amd64

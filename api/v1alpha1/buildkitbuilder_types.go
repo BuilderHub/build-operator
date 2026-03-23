@@ -2,6 +2,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	templatev1alpha1 "github.com/builderhub/build-operator/api/buildertemplate/v1alpha1"
 )
 
 // BuilderMode defines the lifecycle of a BuildkitBuilder.
@@ -15,6 +17,8 @@ const (
 )
 
 // BuildkitBuilderSpec defines the desired state of BuildkitBuilder
+//
+// +kubebuilder:object:generate=true
 type BuildkitBuilderSpec struct {
 	// TemplateRef references a BuildkitBuilderTemplate (cluster-scoped) by name.
 	// If set, spec is derived from the template. Inline spec overrides take precedence.
@@ -23,7 +27,7 @@ type BuildkitBuilderSpec struct {
 
 	// Inline spec when not using a template (or to override template fields).
 	// +optional
-	Template *BuildkitBuilderTemplateSpec `json:"template,omitempty"`
+	Template *templatev1alpha1.BuildkitBuilderTemplateSpec `json:"template,omitempty"`
 
 	// Mode: ephemeral (one pod per build, auto-cleanup), persistent (always-on),
 	// sleepy (scale-to-zero, cache preserved).
@@ -36,7 +40,7 @@ type BuildkitBuilderSpec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 
 	// IdleTimeoutSeconds for sleepy mode: scale to 0 after this idle period (default: 300).
-	// BuilderHub API patches builder-hub.dev/last-used annotation when a build starts.
+	// BuilderHub API patches builder.builder-hub.dev/last-used annotation when a build starts.
 	// +optional
 	// +kubebuilder:default=300
 	IdleTimeoutSeconds *int32 `json:"idleTimeoutSeconds,omitempty"`
@@ -50,6 +54,8 @@ type BuildkitBuilderSpec struct {
 }
 
 // BuildkitBuilderStatus defines the observed state of BuildkitBuilder
+//
+// +kubebuilder:object:generate=true
 type BuildkitBuilderStatus struct {
 	// Endpoint is the BuildKit TCP address for cluster-internal use (e.g. tcp://10.0.0.1:1234)
 	// +optional

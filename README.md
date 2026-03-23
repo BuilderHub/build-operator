@@ -56,7 +56,7 @@ flowchart TB
 
 ### Sleepy Mode (scale-to-zero)
 
-- BuilderHub API patches `builder-hub.dev/last-used` (RFC3339) when a build starts
+- BuilderHub API patches `builder.builder-hub.dev/last-used` (RFC3339) when a build starts
 - Controller scales StatefulSet to 0 when `now - lastUsed > idleTimeoutSeconds`
 - On new build, scale to 1 → same PVC reattaches → cache instantly available
 
@@ -78,12 +78,12 @@ make docker-build docker-push deploy
 ### Template (cluster-scoped blueprint)
 
 ```yaml
-apiVersion: builder-hub.dev/v1alpha1
+apiVersion: builder-template.builder-hub.dev/v1alpha1
 kind: BuildkitBuilderTemplate
 metadata:
   name: default-template
 spec:
-  buildkitImage: moby/buildkit:v0.18.0-rootless
+  buildkitImage: moby/buildkit:master-rootless
   rootless: true
   arch: amd64
   cacheConfig:
@@ -105,7 +105,7 @@ spec:
   templateRef: default-template
   mode: ephemeral
   labels:
-    builder-hub.dev/pool: ci
+    builder.builder-hub.dev/pool: ci
 ```
 
 ### Persistent
@@ -131,7 +131,7 @@ metadata:
   name: sleepy
   namespace: buildkit
   annotations:
-    builder-hub.dev/last-used: "2024-02-22T12:00:00Z"  # Patched by BuilderHub API
+    builder.builder-hub.dev/last-used: "2024-02-22T12:00:00Z"  # Patched by BuilderHub API
 spec:
   templateRef: default-template
   mode: sleepy
@@ -142,7 +142,7 @@ spec:
 
 - Frontend lists `BuildkitBuilder` CRs filtered by `spec.labels`
 - Reads `status.endpoint` (e.g. `tcp://10.0.0.1:1234`) for BuildKit connection
-- For sleepy: before starting a build, PATCH the CR to set `annotations[builder-hub.dev/last-used]` to current RFC3339 timestamp
+- For sleepy: before starting a build, PATCH the CR to set `annotations[builder.builder-hub.dev/last-used]` to current RFC3339 timestamp
 - Routes multi-arch builds by `spec.template.arch` → nodeSelector `kubernetes.io/arch`
 
 ## Requirements

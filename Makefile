@@ -29,7 +29,8 @@ help: ## Show this help
 
 ##@ Development
 .PHONY: generate manifests
-generate manifests: ## Generate CRDs, RBAC, webhooks
+generate manifests: ## Generate CRDs, RBAC, webhooks, deepcopy
+	$(CONTROLLER_GEN) object:headerFile=hack/boilerplate.go.txt paths="./api/..."
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases output:rbac:dir=config/rbac output:webhook:dir=config/webhook
 
 .PHONY: fmt

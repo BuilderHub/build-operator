@@ -60,7 +60,7 @@ spec:
                 default: 300
                 description: |-
                   IdleTimeoutSeconds for sleepy mode: scale to 0 after this idle period (default: 300).
-                  BuilderHub API patches builder-hub.dev/last-used annotation when a build starts.
+                  BuilderHub API patches builder.builder-hub.dev/last-used annotation when a build starts.
                 format: int32
                 type: integer
               labels:
@@ -1009,18 +1009,17 @@ spec:
                         type: object
                     type: object
                   arch:
-                    default: amd64
                     description: |-
-                      Arch is the target architecture for multi-arch builds (amd64, arm64).
-                      Used to set nodeSelector kubernetes.io/arch.
+                      Arch pins scheduling to kubernetes.io/arch (amd64 or arm64).
+                      Empty means no arch nodeSelector — required for multi-arch images on mixed clusters (e.g. arm64 Kind).
                     enum:
                     - amd64
                     - arm64
                     type: string
                   buildkitImage:
-                    default: moby/buildkit:v0.18.0-rootless
+                    default: moby/buildkit:master-rootless
                     description: 'BuildkitImage is the BuildKit daemon image (default:
-                      moby/buildkit:v0.18.0-rootless)'
+                      moby/buildkit:master-rootless)'
                     type: string
                   buildkitdToml:
                     description: |-
@@ -1094,8 +1093,8 @@ spec:
                       amd64)'
                     type: object
                   resources:
-                    description: Resources defines CPU/memory/ephemeral-storage requests
-                      and limits
+                    description: Resources for the buildkitd container. Omit for no
+                      requests/limits (BestEffort).
                     properties:
                       claims:
                         description: |-

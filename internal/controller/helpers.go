@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	templatev1alpha1 "github.com/builderhub/build-operator/api/buildertemplate/v1alpha1"
 	buildkitv1alpha1 "github.com/builderhub/build-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -54,7 +55,7 @@ func headlessServiceForBuilder(b *buildkitv1alpha1.BuildkitBuilder) *corev1.Serv
 }
 
 // pvcForBuilder returns a PVC for the builder cache (stable name: builder-<name>-cache).
-func pvcForBuilder(b *buildkitv1alpha1.BuildkitBuilder, spec *buildkitv1alpha1.BuildkitBuilderTemplateSpec) *corev1.PersistentVolumeClaim {
+func pvcForBuilder(b *buildkitv1alpha1.BuildkitBuilder, spec *templatev1alpha1.BuildkitBuilderTemplateSpec) *corev1.PersistentVolumeClaim {
 	pvc := spec.CacheConfig.PVC
 	size := pvc.Size
 	if size == "" {
@@ -98,9 +99,9 @@ func strPtr(s string) *string {
 
 // statefulSetForBuilder returns a StatefulSet for persistent/sleepy mode.
 // Uses a pre-created PVC (builder-<name>-cache) for cache; StatefulSet pod mounts it.
-func (r *BuildkitBuilderReconciler) statefulSetForBuilder(b *buildkitv1alpha1.BuildkitBuilder, spec *buildkitv1alpha1.BuildkitBuilderTemplateSpec, replicas int32) *appsv1.StatefulSet {
+func (r *BuildkitBuilderReconciler) statefulSetForBuilder(b *buildkitv1alpha1.BuildkitBuilder, spec *templatev1alpha1.BuildkitBuilderTemplateSpec, replicas int32) *appsv1.StatefulSet {
 	var pvcName *string
-	if spec.CacheConfig.Type == buildkitv1alpha1.CacheTypePVC && spec.CacheConfig.PVC != nil {
+	if spec.CacheConfig.Type == templatev1alpha1.CacheTypePVC && spec.CacheConfig.PVC != nil {
 		n := fmt.Sprintf("builder-%s-cache", b.Name)
 		pvcName = &n
 	}
@@ -191,7 +192,7 @@ func (r *BuildkitBuilderReconciler) resolveNodePort(ctx context.Context, b *buil
 func (r *BuildkitBuilderReconciler) resolveStatefulSetEndpoint(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder) (endpoint string, readyReplicas int32, err error) {
 	var pods corev1.PodList
 	if err = r.List(ctx, &pods, client.InNamespace(b.Namespace), client.MatchingLabels{
-		"builder-hub.dev/builder": b.Name,
+		LabelKeyBuilderName: b.Name,
 	}); err != nil {
 		return "", 0, err
 	}

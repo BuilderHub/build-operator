@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.1
-  name: buildkitbuildertemplates.builder-hub.dev
+  name: buildkitbuildertemplates.builder-template.builder-hub.dev
 spec:
-  group: builder-hub.dev
+  group: builder-template.builder-hub.dev
   names:
     kind: BuildkitBuilderTemplate
     listKind: BuildkitBuilderTemplateList

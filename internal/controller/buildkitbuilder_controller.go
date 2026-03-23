@@ -19,17 +19,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	templatev1alpha1 "github.com/builderhub/build-operator/api/buildertemplate/v1alpha1"
 	buildkitv1alpha1 "github.com/builderhub/build-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
-const (
-	// AnnotationLastUsed is patched by BuilderHub API when a build starts (RFC3339 timestamp)
-	AnnotationLastUsed = "builder-hub.dev/last-used"
-	// FinalizerPVC ensures PVCs are cleaned up on CR delete (ephemeral with PVC)
-	FinalizerPVC = "builder-hub.dev/pvc-finalizer"
-)
 
 // BuildkitBuilderReconciler reconciles a BuildkitBuilder object
 type BuildkitBuilderReconciler struct {
@@ -41,7 +36,7 @@ type BuildkitBuilderReconciler struct {
 // +kubebuilder:rbac:groups=builder-hub.dev,resources=buildkitbuilders,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=builder-hub.dev,resources=buildkitbuilders/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=builder-hub.dev,resources=buildkitbuilders/finalizers,verbs=update
-// +kubebuilder:rbac:groups=builder-hub.dev,resources=buildkitbuildertemplates,verbs=get;list;watch
+// +kubebuilder:rbac:groups=builder-template.builder-hub.dev,resources=buildkitbuildertemplates,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
@@ -100,10 +95,10 @@ func (r *BuildkitBuilderReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 }
 
 // resolveSpec merges template (if ref) with inline overrides.
-func (r *BuildkitBuilderReconciler) resolveSpec(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder) (*buildkitv1alpha1.BuildkitBuilderTemplateSpec, error) {
-	var base *buildkitv1alpha1.BuildkitBuilderTemplateSpec
+func (r *BuildkitBuilderReconciler) resolveSpec(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder) (*templatev1alpha1.BuildkitBuilderTemplateSpec, error) {
+	var base *templatev1alpha1.BuildkitBuilderTemplateSpec
 	if b.Spec.TemplateRef != nil {
-		var tmpl buildkitv1alpha1.BuildkitBuilderTemplate
+		var tmpl templatev1alpha1.BuildkitBuilderTemplate
 		if err := r.Get(ctx, client.ObjectKey{Name: *b.Spec.TemplateRef}, &tmpl); err != nil {
 			return nil, fmt.Errorf("template %s not found: %w", *b.Spec.TemplateRef, err)
 		}
@@ -119,8 +114,8 @@ func (r *BuildkitBuilderReconciler) resolveSpec(ctx context.Context, b *buildkit
 	return base, nil
 }
 
-func mergeSpec(base, override *buildkitv1alpha1.BuildkitBuilderTemplateSpec) buildkitv1alpha1.BuildkitBuilderTemplateSpec {
-	var out buildkitv1alpha1.BuildkitBuilderTemplateSpec
+func mergeSpec(base, override *templatev1alpha1.BuildkitBuilderTemplateSpec) templatev1alpha1.BuildkitBuilderTemplateSpec {
+	var out templatev1alpha1.BuildkitBuilderTemplateSpec
 	if base != nil {
 		out = *base.DeepCopy()
 	}
@@ -161,7 +156,7 @@ func mergeSpec(base, override *buildkitv1alpha1.BuildkitBuilderTemplateSpec) bui
 // Creates a plain Pod (not Deployment) named builder-<name>-<rand>, ownerReference
 // to the CR so it deletes automatically. Mount emptyDir or PVC if requested.
 // Expose tcp://<podIP>:1234 in .status.endpoint. Add preStop hook for graceful shutdown.
-func (r *BuildkitBuilderReconciler) reconcileEphemeral(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder, spec *buildkitv1alpha1.BuildkitBuilderTemplateSpec) (ctrl.Result, error) {
+func (r *BuildkitBuilderReconciler) reconcileEphemeral(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder, spec *templatev1alpha1.BuildkitBuilderTemplateSpec) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("reconciling ephemeral builder")
 
@@ -173,8 +168,8 @@ func (r *BuildkitBuilderReconciler) reconcileEphemeral(ctx context.Context, b *b
 	// For ephemeral we typically want one pod. If one already exists and is running, update status.
 	var pods corev1.PodList
 	if err := r.List(ctx, &pods, client.InNamespace(b.Namespace), client.MatchingLabels{
-		"builder-hub.dev/builder": b.Name,
-		"builder-hub.dev/mode":    "ephemeral",
+		LabelKeyBuilderName: b.Name,
+		LabelKeyBuilderMode: "ephemeral",
 	}); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -214,7 +209,7 @@ func (r *BuildkitBuilderReconciler) reconcileEphemeral(ctx context.Context, b *b
 	return r.updateStatus(ctx, b, phase, endpoint, 1, 1, r.resolveNodePort(ctx, b))
 }
 
-func (r *BuildkitBuilderReconciler) buildEphemeralPod(b *buildkitv1alpha1.BuildkitBuilder, spec *buildkitv1alpha1.BuildkitBuilderTemplateSpec) (*corev1.Pod, error) {
+func (r *BuildkitBuilderReconciler) buildEphemeralPod(b *buildkitv1alpha1.BuildkitBuilder, spec *templatev1alpha1.BuildkitBuilderTemplateSpec) (*corev1.Pod, error) {
 	name := fmt.Sprintf("builder-%s-%s", b.Name, randomSuffix())
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -241,7 +236,7 @@ func (r *BuildkitBuilderReconciler) buildEphemeralPod(b *buildkitv1alpha1.Buildk
 // ---------------------------------------------------------------------------
 // StatefulSet (headless service) + PVC if cacheConfig.type == pvc.
 // PVC name stable: builder-<name>-cache. Pod always ready.
-func (r *BuildkitBuilderReconciler) reconcilePersistent(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder, spec *buildkitv1alpha1.BuildkitBuilderTemplateSpec) (ctrl.Result, error) {
+func (r *BuildkitBuilderReconciler) reconcilePersistent(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder, spec *templatev1alpha1.BuildkitBuilderTemplateSpec) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("reconciling persistent builder")
 
@@ -267,7 +262,7 @@ func (r *BuildkitBuilderReconciler) reconcilePersistent(ctx context.Context, b *
 	}
 
 	// Create PVC if cache type is pvc
-	if spec.CacheConfig.Type == buildkitv1alpha1.CacheTypePVC && spec.CacheConfig.PVC != nil {
+	if spec.CacheConfig.Type == templatev1alpha1.CacheTypePVC && spec.CacheConfig.PVC != nil {
 		pvc := pvcForBuilder(b, spec)
 		if err := controllerutil.SetControllerReference(b, pvc, r.Scheme); err != nil {
 			return ctrl.Result{}, err
@@ -302,10 +297,10 @@ func (r *BuildkitBuilderReconciler) reconcilePersistent(ctx context.Context, b *
 // SLEEPY MODE
 // ---------------------------------------------------------------------------
 // Same StatefulSet + PVC as persistent, but controller actively scales replicas between 0 and 1.
-// Uses builder-hub.dev/last-used annotation (RFC3339) patched by BuilderHub API when build starts.
+// Uses builder.builder-hub.dev/last-used annotation (RFC3339) patched by BuilderHub API when build starts.
 // If (now - lastUsed > idleTimeout) && no active builds, scale StatefulSet to 0.
 // When new build comes in, scale to 1 (PVC re-attaches → cache instantly available).
-func (r *BuildkitBuilderReconciler) reconcileSleepy(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder, spec *buildkitv1alpha1.BuildkitBuilderTemplateSpec) (ctrl.Result, error) {
+func (r *BuildkitBuilderReconciler) reconcileSleepy(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder, spec *templatev1alpha1.BuildkitBuilderTemplateSpec) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("reconciling sleepy builder")
 
@@ -331,7 +326,7 @@ func (r *BuildkitBuilderReconciler) reconcileSleepy(ctx context.Context, b *buil
 	}
 
 	// PVC for cache
-	if spec.CacheConfig.Type == buildkitv1alpha1.CacheTypePVC && spec.CacheConfig.PVC != nil {
+	if spec.CacheConfig.Type == templatev1alpha1.CacheTypePVC && spec.CacheConfig.PVC != nil {
 		pvc := pvcForBuilder(b, spec)
 		if err := controllerutil.SetControllerReference(b, pvc, r.Scheme); err != nil {
 			return ctrl.Result{}, err
@@ -400,8 +395,8 @@ var validLabelValueRegex = regexp.MustCompile(`^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A
 
 func labelsForBuilder(b *buildkitv1alpha1.BuildkitBuilder, mode string) map[string]string {
 	m := map[string]string{
-		"builder-hub.dev/builder": b.Name,
-		"builder-hub.dev/mode":    mode,
+		LabelKeyBuilderName: b.Name,
+		LabelKeyBuilderMode: mode,
 	}
 	for k, v := range b.Spec.Labels {
 		if validLabelValueRegex.MatchString(v) {
@@ -412,7 +407,7 @@ func labelsForBuilder(b *buildkitv1alpha1.BuildkitBuilder, mode string) map[stri
 	return m
 }
 
-func (r *BuildkitBuilderReconciler) buildPodSpec(spec *buildkitv1alpha1.BuildkitBuilderTemplateSpec, b *buildkitv1alpha1.BuildkitBuilder, pvcName *string) corev1.PodSpec {
+func (r *BuildkitBuilderReconciler) buildPodSpec(spec *templatev1alpha1.BuildkitBuilderTemplateSpec, b *buildkitv1alpha1.BuildkitBuilder, pvcName *string) corev1.PodSpec {
 	securityContext := &corev1.PodSecurityContext{}
 	if spec.Rootless {
 		securityContext.RunAsNonRoot = ptr(true)
@@ -444,7 +439,7 @@ func (r *BuildkitBuilderReconciler) buildPodSpec(spec *buildkitv1alpha1.Buildkit
 	volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: "buildkitd-config", MountPath: "/etc/buildkit"})
 
 	// Cache volume (PVC or emptyDir)
-	if spec.CacheConfig.Type == buildkitv1alpha1.CacheTypePVC && pvcName != nil {
+	if spec.CacheConfig.Type == templatev1alpha1.CacheTypePVC && pvcName != nil {
 		volumes = append(volumes, corev1.Volume{
 			Name: "cache",
 			VolumeSource: corev1.VolumeSource{
@@ -463,7 +458,7 @@ func (r *BuildkitBuilderReconciler) buildPodSpec(spec *buildkitv1alpha1.Buildkit
 	}
 
 	// S3 credentials (projected)
-	if spec.CacheConfig.Type == buildkitv1alpha1.CacheTypeS3 && spec.CacheConfig.S3 != nil && spec.CacheConfig.S3.SecretRef != nil {
+	if spec.CacheConfig.Type == templatev1alpha1.CacheTypeS3 && spec.CacheConfig.S3 != nil && spec.CacheConfig.S3.SecretRef != nil {
 		volumes = append(volumes, corev1.Volume{
 			Name: "s3-creds",
 			VolumeSource: corev1.VolumeSource{
@@ -540,7 +535,7 @@ func defaultBuildkitdToml() string {
 }
 
 // ensureBuildkitdConfigMap creates/updates the ConfigMap with buildkitd.toml (tcp listener on 1234 + TLS if configured).
-func (r *BuildkitBuilderReconciler) ensureBuildkitdConfigMap(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder, spec *buildkitv1alpha1.BuildkitBuilderTemplateSpec) error {
+func (r *BuildkitBuilderReconciler) ensureBuildkitdConfigMap(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder, spec *templatev1alpha1.BuildkitBuilderTemplateSpec) error {
 	buildkitdToml := spec.BuildkitdToml
 	if buildkitdToml == "" {
 		buildkitdToml = defaultBuildkitdToml()

@@ -60,7 +60,7 @@ spec:
                 default: 300
                 description: |-
                   IdleTimeoutSeconds for sleepy mode: scale to 0 after this idle period (default: 300).
-                  BuilderHub API patches builder-hub.dev/last-used annotation when a build starts.
+                  BuilderHub API patches builder.builder-hub.dev/last-used annotation when a build starts.
                 format: int32
                 type: integer
               labels:

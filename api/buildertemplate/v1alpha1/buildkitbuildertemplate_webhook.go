@@ -10,21 +10,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// log is for logging in this package.
 var buildkitbuildertemplatelog = logf.Log.WithName("buildkitbuildertemplate-resource")
 
-// SetupWebhookWithManager registers the webhook
 func (r *BuildkitBuilderTemplate) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr, r).
 		Complete()
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to disable mutation.
-// +kubebuilder:webhook:path=/mutate-builder-hub-dev-v1alpha1-buildkitbuildertemplate,mutating=true,failurePolicy=fail,sideEffects=None,groups=builder-hub.dev,resources=buildkitbuildertemplates,verbs=create;update,versions=v1alpha1,name=mbuildkitbuildertemplate.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-builder-template-builder-hub-dev-v1alpha1-buildkitbuildertemplate,mutating=true,failurePolicy=fail,sideEffects=None,groups=builder-template.builder-hub.dev,resources=buildkitbuildertemplates,verbs=create;update,versions=v1alpha1,name=mbuildkitbuildertemplate.kb.io,admissionReviewVersions=v1
 
 var _ admission.Defaulter[*BuildkitBuilderTemplate] = (*BuildkitBuilderTemplate)(nil)
 
-// Default implements admission.Defaulter so a webhook will be registered for the type
 func (r *BuildkitBuilderTemplate) Default(ctx context.Context, obj *BuildkitBuilderTemplate) error {
 	buildkitbuildertemplatelog.Info("default", "name", obj.Name)
 	if obj.Spec.BuildkitImage == "" {
@@ -42,24 +38,20 @@ func (r *BuildkitBuilderTemplate) Default(ctx context.Context, obj *BuildkitBuil
 	return nil
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to disable validation.
-// +kubebuilder:webhook:path=/validate-builder-hub-dev-v1alpha1-buildkitbuildertemplate,mutating=false,failurePolicy=fail,sideEffects=None,groups=builder-hub.dev,resources=buildkitbuildertemplates,verbs=create;update,versions=v1alpha1,name=vbuildkitbuildertemplate.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-builder-template-builder-hub-dev-v1alpha1-buildkitbuildertemplate,mutating=false,failurePolicy=fail,sideEffects=None,groups=builder-template.builder-hub.dev,resources=buildkitbuildertemplates,verbs=create;update,versions=v1alpha1,name=vbuildkitbuildertemplate.kb.io,admissionReviewVersions=v1
 
 var _ admission.Validator[*BuildkitBuilderTemplate] = (*BuildkitBuilderTemplate)(nil)
 
-// ValidateCreate implements admission.Validator so a webhook will be registered for the type
 func (r *BuildkitBuilderTemplate) ValidateCreate(ctx context.Context, obj *BuildkitBuilderTemplate) (admission.Warnings, error) {
 	buildkitbuildertemplatelog.Info("validate create", "name", obj.Name)
 	return nil, obj.validate()
 }
 
-// ValidateUpdate implements admission.Validator so a webhook will be registered for the type
 func (r *BuildkitBuilderTemplate) ValidateUpdate(ctx context.Context, old, new *BuildkitBuilderTemplate) (admission.Warnings, error) {
 	buildkitbuildertemplatelog.Info("validate update", "name", new.Name)
 	return nil, new.validate()
 }
 
-// ValidateDelete implements admission.Validator so a webhook will be registered for the type
 func (r *BuildkitBuilderTemplate) ValidateDelete(ctx context.Context, obj *BuildkitBuilderTemplate) (admission.Warnings, error) {
 	buildkitbuildertemplatelog.Info("validate delete", "name", obj.Name)
 	return nil, nil

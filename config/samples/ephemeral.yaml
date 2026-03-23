@@ -9,5 +9,5 @@ spec:
   templateRef: default-template
   mode: ephemeral
   labels:
-    builder-hub.dev/pool: ci
-    builder-hub.dev/arch: amd64
+    builder.builder-hub.dev/pool: ci
+    builder.builder-hub.dev/arch: amd64

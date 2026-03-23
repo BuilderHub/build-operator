@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	templatev1alpha1 "github.com/builderhub/build-operator/api/buildertemplate/v1alpha1"
 	buildkitv1alpha1 "github.com/builderhub/build-operator/api/v1alpha1"
 	buildkitcontroller "github.com/builderhub/build-operator/internal/controller"
 )
@@ -28,6 +29,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(buildkitv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(templatev1alpha1.AddToScheme(scheme))
 }
 
 func main() {

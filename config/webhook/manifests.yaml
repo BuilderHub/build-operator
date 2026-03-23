@@ -30,12 +30,12 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-builder-hub-dev-v1alpha1-buildkitbuildertemplate
+      path: /mutate-builder-template-builder-hub-dev-v1alpha1-buildkitbuildertemplate
   failurePolicy: Fail
   name: mbuildkitbuildertemplate.kb.io
   rules:
   - apiGroups:
-    - builder-hub.dev
+    - builder-template.builder-hub.dev
     apiVersions:
     - v1alpha1
     operations:
@@ -76,12 +76,12 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-builder-hub-dev-v1alpha1-buildkitbuildertemplate
+      path: /validate-builder-template-builder-hub-dev-v1alpha1-buildkitbuildertemplate
   failurePolicy: Fail
   name: vbuildkitbuildertemplate.kb.io
   rules:
   - apiGroups:
-    - builder-hub.dev
+    - builder-template.builder-hub.dev
     apiVersions:
     - v1alpha1
     operations:

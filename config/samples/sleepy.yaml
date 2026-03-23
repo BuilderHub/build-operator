@@ -1,5 +1,5 @@
 # Sleepy BuildkitBuilder - scale-to-zero when idle, cache preserved on PVC
-# BuilderHub API patches builder-hub.dev/last-used (RFC3339) when build starts
+# BuilderHub API patches builder.builder-hub.dev/last-used (RFC3339) when build starts
 # Controller scales StatefulSet 0<->1; PVC reattaches → cache instantly available
 apiVersion: builder-hub.dev/v1alpha1
 kind: BuildkitBuilder
@@ -7,12 +7,12 @@ metadata:
   name: sleepy-cost-optimized
   namespace: buildkit
   annotations:
-    builder-hub.dev/last-used: "2024-02-22T12:00:00Z"  # Patched by BuilderHub API on build start
+    builder.builder-hub.dev/last-used: "2024-02-22T12:00:00Z"  # Patched by BuilderHub API on build start
 spec:
   templateRef: default-template
   mode: sleepy
   replicas: 1
   idleTimeoutSeconds: 300
   labels:
-    builder-hub.dev/pool: sleepy
-    builder-hub.dev/arch: arm64
+    builder.builder-hub.dev/pool: sleepy
+    builder.builder-hub.dev/arch: arm64

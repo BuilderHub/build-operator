@@ -3,4 +3,4 @@ kind: Kustomization
 
 resources:
   - bases/builder-hub.dev_buildkitbuilders.yaml
-  - bases/builder-hub.dev_buildkitbuildertemplates.yaml
+  - bases/builder-template.builder-hub.dev_buildkitbuildertemplates.yaml

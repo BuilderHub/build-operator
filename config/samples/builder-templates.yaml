@@ -8,7 +8,7 @@
 # No spec.resources: buildkitd runs with no CPU/memory requests or limits (BestEffort); set
 # spec.resources on a custom template when you need QoS guarantees.
 ---
-apiVersion: builder-hub.dev/v1alpha1
+apiVersion: builder-template.builder-hub.dev/v1alpha1
 kind: BuildkitBuilderTemplate
 metadata:
   name: builder-small
@@ -23,7 +23,7 @@ spec:
       accessModes:
         - ReadWriteOnce
 ---
-apiVersion: builder-hub.dev/v1alpha1
+apiVersion: builder-template.builder-hub.dev/v1alpha1
 kind: BuildkitBuilderTemplate
 metadata:
   name: builder-medium
@@ -38,7 +38,7 @@ spec:
       accessModes:
         - ReadWriteOnce
 ---
-apiVersion: builder-hub.dev/v1alpha1
+apiVersion: builder-template.builder-hub.dev/v1alpha1
 kind: BuildkitBuilderTemplate
 metadata:
   name: builder-large
@@ -53,7 +53,7 @@ spec:
       accessModes:
         - ReadWriteOnce
 ---
-apiVersion: builder-hub.dev/v1alpha1
+apiVersion: builder-template.builder-hub.dev/v1alpha1
 kind: BuildkitBuilderTemplate
 metadata:
   name: builder-xlarge

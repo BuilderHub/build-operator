@@ -16,6 +16,8 @@ const (
 )
 
 // PVCConfig defines PersistentVolumeClaim settings for cache storage.
+//
+// +kubebuilder:object:generate=true
 type PVCConfig struct {
 	StorageClassName string   `json:"storageClassName,omitempty"`
 	Size             string   `json:"size"`
@@ -24,6 +26,8 @@ type PVCConfig struct {
 
 // S3Config defines S3/MinIO settings for cache storage.
 // Credentials are provided via secretRef; operator mounts them as a projected volume.
+//
+// +kubebuilder:object:generate=true
 type S3Config struct {
 	Bucket    string                       `json:"bucket"`
 	Region    string                       `json:"region,omitempty"`
@@ -32,6 +36,8 @@ type S3Config struct {
 }
 
 // CacheConfig defines the BuildKit cache backend configuration.
+//
+// +kubebuilder:object:generate=true
 type CacheConfig struct {
 	Type CacheType  `json:"type"`
 	PVC  *PVCConfig `json:"pvc,omitempty"`
@@ -39,6 +45,8 @@ type CacheConfig struct {
 }
 
 // BuildkitBuilderTemplateSpec defines the desired state of BuildkitBuilderTemplate
+//
+// +kubebuilder:object:generate=true
 type BuildkitBuilderTemplateSpec struct {
 	// BuildkitImage is the BuildKit daemon image (default: moby/buildkit:master-rootless)
 	// +optional

@@ -15,11 +15,11 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: builderhub/actions-internal/.github/workflows/build-push-image.yaml@v1.0.1
+    uses: builderhub/actions-internal/.github/workflows/build-push-image.yaml@main
     with:
-      build-type: dockerfile
       image-name: build-operator
       dockerfile: Dockerfile
       context: .
+      push-to-registry: ${{ github.event_name == 'push' }}
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}

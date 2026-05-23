@@ -169,4 +169,4 @@ build-operator/
 
 ## License
 
-Apache 2.0
+This project is licensed under the [MIT License](LICENSE).

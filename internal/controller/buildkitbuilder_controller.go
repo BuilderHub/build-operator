@@ -25,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-
 // BuildkitBuilderReconciler reconciles a BuildkitBuilder object
 type BuildkitBuilderReconciler struct {
 	client.Client
@@ -99,8 +98,8 @@ func (r *BuildkitBuilderReconciler) resolveSpec(ctx context.Context, b *buildkit
 	var base *templatev1alpha1.BuildkitBuilderTemplateSpec
 	if b.Spec.TemplateRef != nil {
 		var tmpl templatev1alpha1.BuildkitBuilderTemplate
-		if err := r.Get(ctx, client.ObjectKey{Name: *b.Spec.TemplateRef}, &tmpl); err != nil {
-			return nil, fmt.Errorf("template %s not found: %w", *b.Spec.TemplateRef, err)
+		if err := r.Get(ctx, client.ObjectKey{Namespace: b.Namespace, Name: *b.Spec.TemplateRef}, &tmpl); err != nil {
+			return nil, fmt.Errorf("template %s not found in namespace %s: %w", *b.Spec.TemplateRef, b.Namespace, err)
 		}
 		base = &tmpl.Spec
 	}

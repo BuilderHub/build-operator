@@ -1,4 +1,4 @@
-# BuildkitBuilderTemplate - example cluster-scoped blueprint (not applied by Tilt by default).
+# BuildkitBuilderTemplate - example namespace-scoped (org-scoped) blueprint.
 # See builder-templates.yaml for builder-small through builder-xlarge.
 apiVersion: builder-template.builder-hub.dev/v1alpha1
 kind: BuildkitBuilderTemplate

@@ -5,7 +5,7 @@ package controller
 // group domain builder-hub.dev.
 const (
 	LabelKeyBuilderName = "builder.builder-hub.dev/name"
-	LabelKeyBuilderMode   = "builder.builder-hub.dev/mode"
+	LabelKeyBuilderMode = "builder.builder-hub.dev/mode"
 
 	// AnnotationLastUsed is patched by BuilderHub API when a build starts (RFC3339).
 	AnnotationLastUsed = "builder.builder-hub.dev/last-used"

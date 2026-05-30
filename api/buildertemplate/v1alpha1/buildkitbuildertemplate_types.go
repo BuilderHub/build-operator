@@ -89,9 +89,9 @@ type BuildkitBuilderTemplateSpec struct {
 	Arch string `json:"arch,omitempty"`
 }
 
-// BuildkitBuilderTemplate is the Schema for the BuildkitBuilderTemplate API (cluster-scoped blueprint)
+// BuildkitBuilderTemplate is the Schema for the BuildkitBuilderTemplate API (namespace-scoped / org-scoped blueprint)
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=buildkitbuildertemplates,scope=Cluster,singular=buildkitbuildertemplate
+// +kubebuilder:resource:path=buildkitbuildertemplates,scope=Namespaced,singular=buildkitbuildertemplate
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Image",type=string,JSONPath=`.spec.buildkitImage`
 // +kubebuilder:printcolumn:name="Arch",type=string,JSONPath=`.spec.arch`

@@ -1,6 +1,6 @@
 # Builder size templates aligned with frontend BUILDER_SIZES (small, medium, large, xlarge).
-# Referenced by BuildkitBuilder.spec.templateRef (e.g. builder-small).
-# Applied by build-operator Tiltfile so clusters have these templates before creating builders.
+# These are now namespace-scoped (org-scoped). They live in the organization's namespace.
+# Referenced by BuildkitBuilder.spec.templateRef (e.g. builder-small) from within the same namespace.
 #
 # No arch/nodeSelector pin: moby/buildkit rootless images are multi-arch. Pinning amd64 breaks
 # buildkitImage: master-rootless tracks BuildKit main (expect churn vs semver tags).

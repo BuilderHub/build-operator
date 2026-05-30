@@ -20,7 +20,7 @@ const (
 //
 // +kubebuilder:object:generate=true
 type BuildkitBuilderSpec struct {
-	// TemplateRef references a BuildkitBuilderTemplate (cluster-scoped) by name.
+	// TemplateRef references a BuildkitBuilderTemplate (namespace-scoped, lives in the same namespace as the builder) by name.
 	// If set, spec is derived from the template. Inline spec overrides take precedence.
 	// +optional
 	TemplateRef *string `json:"templateRef,omitempty"`

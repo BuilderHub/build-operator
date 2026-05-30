@@ -75,7 +75,7 @@ make docker-build docker-push deploy
 
 ## Example CRs
 
-### Template (cluster-scoped blueprint)
+### Template (namespace-scoped / org-scoped blueprint)
 
 ```yaml
 apiVersion: builder-template.builder-hub.dev/v1alpha1
@@ -102,7 +102,7 @@ metadata:
   name: ephemeral-ci
   namespace: buildkit
 spec:
-  templateRef: default-template
+  templateRef: my-org-template
   mode: ephemeral
   labels:
     builder.builder-hub.dev/pool: ci
@@ -117,7 +117,7 @@ metadata:
   name: persistent-shared
   namespace: buildkit
 spec:
-  templateRef: default-template
+  templateRef: my-org-template
   mode: persistent
   replicas: 1
 ```
@@ -133,7 +133,7 @@ metadata:
   annotations:
     builder.builder-hub.dev/last-used: "2024-02-22T12:00:00Z"  # Patched by BuilderHub API
 spec:
-  templateRef: default-template
+  templateRef: my-org-template
   mode: sleepy
   idleTimeoutSeconds: 300
 ```

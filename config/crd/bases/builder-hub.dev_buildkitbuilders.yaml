@@ -1202,7 +1202,7 @@ spec:
                 type: object
               templateRef:
                 description: |-
-                  TemplateRef references a BuildkitBuilderTemplate (cluster-scoped) by name.
+                  TemplateRef references a BuildkitBuilderTemplate (namespace-scoped, lives in the same namespace as the builder) by name.
                   If set, spec is derived from the template. Inline spec overrides take precedence.
                 type: string
             required:

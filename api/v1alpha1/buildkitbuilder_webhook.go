@@ -64,8 +64,5 @@ func (r *BuildkitBuilder) validate() error {
 	if r.Spec.TemplateRef != nil && *r.Spec.TemplateRef == "" {
 		return fmt.Errorf("templateRef cannot be empty")
 	}
-	if r.Spec.Mode == BuilderModeEphemeral && r.Spec.Replicas != nil && *r.Spec.Replicas != 1 {
-		return fmt.Errorf("replicas is ignored for ephemeral mode")
-	}
 	return nil
 }

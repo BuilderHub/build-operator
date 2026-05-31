@@ -278,11 +278,9 @@ func setCondition(status *buildkitv1alpha1.BuildkitBuilderStatus, condType strin
 	})
 }
 
-// reconcileDelete runs finalizers on CR delete (ephemeral: clean up PVCs).
+// reconcileDelete runs finalizers on CR delete.
 func (r *BuildkitBuilderReconciler) reconcileDelete(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder) (ctrl.Result, error) {
 	if controllerutil.ContainsFinalizer(b, FinalizerPVC) {
-		// Delete any ephemeral PVCs owned by this builder
-		// (in our design, ephemeral rarely uses PVC; mostly emptyDir)
 		controllerutil.RemoveFinalizer(b, FinalizerPVC)
 		if err := r.Update(ctx, b); err != nil {
 			return ctrl.Result{}, err

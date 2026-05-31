@@ -82,8 +82,6 @@ func (r *BuildkitBuilderReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	// Branch by mode
 	switch builder.Spec.Mode {
-	case buildkitv1alpha1.BuilderModeEphemeral:
-		return r.reconcileEphemeral(ctx, &builder, spec)
 	case buildkitv1alpha1.BuilderModePersistent:
 		return r.reconcilePersistent(ctx, &builder, spec)
 	case buildkitv1alpha1.BuilderModeSleepy:
@@ -154,82 +152,6 @@ func mergeSpec(base, override *templatev1alpha1.BuildkitBuilderTemplateSpec) tem
 // ---------------------------------------------------------------------------
 // Creates a plain Pod (not Deployment) named builder-<name>-<rand>, ownerReference
 // to the CR so it deletes automatically. Mount emptyDir or PVC if requested.
-// Expose tcp://<podIP>:1234 in .status.endpoint. Add preStop hook for graceful shutdown.
-func (r *BuildkitBuilderReconciler) reconcileEphemeral(ctx context.Context, b *buildkitv1alpha1.BuildkitBuilder, spec *templatev1alpha1.BuildkitBuilderTemplateSpec) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	logger.Info("reconciling ephemeral builder")
-
-	// Ensure buildkitd ConfigMap exists
-	if err := r.ensureBuildkitdConfigMap(ctx, b, spec); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// For ephemeral we typically want one pod. If one already exists and is running, update status.
-	var pods corev1.PodList
-	if err := r.List(ctx, &pods, client.InNamespace(b.Namespace), client.MatchingLabels{
-		LabelKeyBuilderName: b.Name,
-		LabelKeyBuilderMode: "ephemeral",
-	}); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// Ensure NodePort Service for external access (no port-forward)
-	svc := nodePortServiceForBuilder(b)
-	if err := r.createOrUpdateService(ctx, svc); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// If no pod exists, create one
-	if len(pods.Items) == 0 {
-		pod, err := r.buildEphemeralPod(b, spec)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		if err := controllerutil.SetControllerReference(b, pod, r.Scheme); err != nil {
-			return ctrl.Result{}, err
-		}
-		if err := r.Create(ctx, pod); err != nil {
-			return ctrl.Result{}, err
-		}
-		r.Recorder.Event(b, corev1.EventTypeNormal, "Created", "Created ephemeral build pod")
-		return ctrl.Result{Requeue: true}, nil
-	}
-
-	// Update status from existing pod
-	pod := &pods.Items[0]
-	endpoint := ""
-	phase := "Pending"
-	if pod.Status.PodIP != "" {
-		endpoint = fmt.Sprintf("tcp://%s:1234", pod.Status.PodIP)
-	}
-	if pod.Status.Phase == corev1.PodRunning {
-		phase = "Ready"
-	}
-	return r.updateStatus(ctx, b, phase, endpoint, 1, 1, r.resolveNodePort(ctx, b))
-}
-
-func (r *BuildkitBuilderReconciler) buildEphemeralPod(b *buildkitv1alpha1.BuildkitBuilder, spec *templatev1alpha1.BuildkitBuilderTemplateSpec) (*corev1.Pod, error) {
-	name := fmt.Sprintf("builder-%s-%s", b.Name, randomSuffix())
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace:   b.Namespace,
-			Name:        name,
-			Labels:      labelsForBuilder(b, "ephemeral"),
-			Annotations: b.Spec.Labels,
-		},
-		Spec: r.buildPodSpec(spec, b, nil),
-	}
-	// preStop hook for graceful shutdown
-	pod.Spec.Containers[0].Lifecycle = &corev1.Lifecycle{
-		PreStop: &corev1.LifecycleHandler{
-			Exec: &corev1.ExecAction{
-				Command: []string{"/bin/sh", "-c", "sleep 5"},
-			},
-		},
-	}
-	return pod, nil
-}
-
 // ---------------------------------------------------------------------------
 // PERSISTENT MODE
 // ---------------------------------------------------------------------------

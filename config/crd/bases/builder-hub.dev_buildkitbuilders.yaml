@@ -70,18 +70,15 @@ spec:
                   frontend
                 type: object
               mode:
-                description: |-
-                  Mode: ephemeral (one pod per build, auto-cleanup), persistent (always-on),
-                  sleepy (scale-to-zero, cache preserved).
+                description: 'Mode: persistent (always-on) or sleepy (scale-to-zero
+                  with cache preserved).'
                 enum:
-                - ephemeral
                 - persistent
                 - sleepy
                 type: string
               replicas:
                 default: 1
-                description: 'Replicas for persistent/sleepy mode (default: 1). Ignored
-                  for ephemeral.'
+                description: 'Replicas for persistent/sleepy mode (default: 1).'
                 format: int32
                 type: integer
               template:

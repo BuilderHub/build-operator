@@ -7,11 +7,10 @@ import (
 )
 
 // BuilderMode defines the lifecycle of a BuildkitBuilder.
-// +kubebuilder:validation:Enum=ephemeral;persistent;sleepy
+// +kubebuilder:validation:Enum=persistent;sleepy
 type BuilderMode string
 
 const (
-	BuilderModeEphemeral  BuilderMode = "ephemeral"
 	BuilderModePersistent BuilderMode = "persistent"
 	BuilderModeSleepy     BuilderMode = "sleepy"
 )
@@ -29,12 +28,11 @@ type BuildkitBuilderSpec struct {
 	// +optional
 	Template *templatev1alpha1.BuildkitBuilderTemplateSpec `json:"template,omitempty"`
 
-	// Mode: ephemeral (one pod per build, auto-cleanup), persistent (always-on),
-	// sleepy (scale-to-zero, cache preserved).
+	// Mode: persistent (always-on) or sleepy (scale-to-zero with cache preserved).
 	// +kubebuilder:validation:Required
 	Mode BuilderMode `json:"mode"`
 
-	// Replicas for persistent/sleepy mode (default: 1). Ignored for ephemeral.
+	// Replicas for persistent/sleepy mode (default: 1).
 	// +optional
 	// +kubebuilder:default=1
 	Replicas *int32 `json:"replicas,omitempty"`
@@ -48,9 +46,6 @@ type BuildkitBuilderSpec struct {
 	// Labels for service discovery and routing in BuilderHub frontend
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
-
-	// OwnerReferences are preserved so CI jobs can own ephemeral builders
-	// (set by the creating controller, not in spec)
 }
 
 // BuildkitBuilderStatus defines the observed state of BuildkitBuilder

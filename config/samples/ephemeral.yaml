@@ -1,13 +1,14 @@
-# Ephemeral BuildkitBuilder - one pod per build, auto-cleanup, perfect isolation
-# CI jobs can own ephemeral builders via ownerReferences
+# NOTE: "ephemeral" mode has been removed from BuilderHub.
+#
+# Use "persistent" or "sleepy" instead. Example:
 apiVersion: builder-hub.dev/v1alpha1
 kind: BuildkitBuilder
 metadata:
-  name: ephemeral-ci
+  name: persistent-example
   namespace: buildkit
 spec:
   templateRef: default-template
-  mode: ephemeral
+  mode: persistent
+  replicas: 1
   labels:
     builder.builder-hub.dev/pool: ci
-    builder.builder-hub.dev/arch: amd64

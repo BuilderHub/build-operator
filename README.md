@@ -17,7 +17,7 @@ flowchart TB
             Recon[BuildkitBuilder Controller]
         end
 
-        subgraph EPHEMERAL["ephemeral mode"]
+        subgraph PERSISTENT["persistent mode"]
             Pod1[Pod builder-xxx-rand]
             Pod1 --> |ownerReference| CR1[BuildkitBuilder]
         end
@@ -50,7 +50,7 @@ flowchart TB
 
 | Mode        | Workload      | Cache                    | Use Case                          |
 |-------------|---------------|--------------------------|-----------------------------------|
-| **Ephemeral**  | Plain Pod     | emptyDir (or optional PVC) | CI jobs, one build = one pod, auto-cleanup |
+| **Persistent** | StatefulSet   | PVC (recommended)          | Long-running builders with stable identity |
 | **Persistent** | StatefulSet   | PVC (stable)             | Always-on shared builders         |
 | **Sleepy**     | StatefulSet 0↔1 | PVC preserved           | Scale-to-zero, cache instantly restored |
 
@@ -93,21 +93,6 @@ spec:
       accessModes: [ReadWriteOnce]
 ```
 
-### Ephemeral
-
-```yaml
-apiVersion: builder-hub.dev/v1alpha1
-kind: BuildkitBuilder
-metadata:
-  name: ephemeral-ci
-  namespace: buildkit
-spec:
-  templateRef: my-org-template
-  mode: ephemeral
-  labels:
-    builder.builder-hub.dev/pool: ci
-```
-
 ### Persistent
 
 ```yaml
@@ -122,19 +107,18 @@ spec:
   replicas: 1
 ```
 
-### Sleepy
+### Sleepy (recommended for most cases)
 
 ```yaml
 apiVersion: builder-hub.dev/v1alpha1
 kind: BuildkitBuilder
 metadata:
-  name: sleepy
+  name: sleepy-dev
   namespace: buildkit
-  annotations:
-    builder.builder-hub.dev/last-used: "2024-02-22T12:00:00Z"  # Patched by BuilderHub API
 spec:
   templateRef: my-org-template
   mode: sleepy
+  replicas: 1
   idleTimeoutSeconds: 300
 ```
 

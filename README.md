@@ -1,6 +1,6 @@
 # BuilderHub BuildKit Operator
 
-Kubernetes Operator for **BuilderHub** ([builder-hub.dev](https://builder-hub.dev)) — BuildKit as a Service on bare-metal Kubernetes. Supports three builder lifecycles with zero cache loss.
+Kubernetes Operator for **BuilderHub** ([builder-hub.dev](https://builder-hub.dev)) — BuildKit as a Service on bare-metal Kubernetes. Supports persistent and sleepy builder lifecycles with zero cache loss.
 
 ## Architecture
 
@@ -15,11 +15,6 @@ flowchart TB
     subgraph K8S["Kubernetes Cluster"]
         subgraph OP["build-operator"]
             Recon[BuildkitBuilder Controller]
-        end
-
-        subgraph PERSISTENT["persistent mode"]
-            Pod1[Pod builder-xxx-rand]
-            Pod1 --> |ownerReference| CR1[BuildkitBuilder]
         end
 
         subgraph PERSISTENT["persistent mode"]
@@ -40,7 +35,6 @@ flowchart TB
     end
 
     FE --> |create/scale| Recon
-    Recon --> EPHEMERAL
     Recon --> PERSISTENT
     Recon --> SLEEPY
     API --> |PATCH last-used| Ann
@@ -48,11 +42,10 @@ flowchart TB
 
 ## Builder Modes
 
-| Mode        | Workload      | Cache                    | Use Case                          |
-|-------------|---------------|--------------------------|-----------------------------------|
-| **Persistent** | StatefulSet   | PVC (recommended)          | Long-running builders with stable identity |
-| **Persistent** | StatefulSet   | PVC (stable)             | Always-on shared builders         |
-| **Sleepy**     | StatefulSet 0↔1 | PVC preserved           | Scale-to-zero, cache instantly restored |
+| Mode        | Workload         | Cache                  | Use Case                                      |
+|-------------|------------------|------------------------|-----------------------------------------------|
+| **Persistent** | StatefulSet      | PVC (recommended)      | Long-running builders with stable identity    |
+| **Sleepy**     | StatefulSet 0↔1  | PVC preserved          | Scale-to-zero with instant cache restoration  |
 
 ### Sleepy Mode (scale-to-zero)
 
@@ -132,7 +125,7 @@ spec:
 ## Requirements
 
 - Kubernetes 1.28+
-- Go 1.23 (for development)
+- Go 1.25 (for development)
 - controller-gen (for `make generate`)
 
 ## Project Layout

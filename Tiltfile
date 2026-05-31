@@ -16,4 +16,5 @@ local_resource(
     ],
     allow_parallel=True,
     resource_deps=['local-path-provisioner'],
+    labels=['backend'],
 )

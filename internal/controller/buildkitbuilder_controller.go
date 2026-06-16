@@ -330,9 +330,22 @@ func labelsForBuilder(b *buildkitv1alpha1.BuildkitBuilder, mode string) map[stri
 
 func (r *BuildkitBuilderReconciler) buildPodSpec(spec *templatev1alpha1.BuildkitBuilderTemplateSpec, b *buildkitv1alpha1.BuildkitBuilder, pvcName *string) corev1.PodSpec {
 	securityContext := &corev1.PodSecurityContext{}
+	cacheMountPath := "/var/lib/buildkit"
+	buildkitArgs := []string{"--config", "/etc/buildkit/buildkitd.toml"}
+	containerSecurityContext := &corev1.SecurityContext{}
+
 	if spec.Rootless {
 		securityContext.RunAsNonRoot = ptr(true)
 		securityContext.RunAsUser = ptr(int64(1000))
+		securityContext.RunAsGroup = ptr(int64(1000))
+		securityContext.FSGroup = ptr(int64(1000))
+		cacheMountPath = "/home/user/.local/share/buildkit"
+		buildkitArgs = append([]string{"--oci-worker-no-process-sandbox"}, buildkitArgs...)
+		containerSecurityContext.RunAsNonRoot = ptr(true)
+		containerSecurityContext.RunAsUser = ptr(int64(1000))
+		containerSecurityContext.RunAsGroup = ptr(int64(1000))
+		containerSecurityContext.SeccompProfile = &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeUnconfined}
+		containerSecurityContext.AppArmorProfile = &corev1.AppArmorProfile{Type: corev1.AppArmorProfileTypeUnconfined}
 	}
 
 	nodeSelector := map[string]string{}
@@ -369,13 +382,13 @@ func (r *BuildkitBuilderReconciler) buildPodSpec(spec *templatev1alpha1.Buildkit
 				},
 			},
 		})
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: "cache", MountPath: "/var/lib/buildkit"})
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: "cache", MountPath: cacheMountPath})
 	} else {
 		volumes = append(volumes, corev1.Volume{
 			Name:         "cache",
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
 		})
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: "cache", MountPath: "/var/lib/buildkit"})
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: "cache", MountPath: cacheMountPath})
 	}
 
 	// S3 credentials (projected)
@@ -410,9 +423,10 @@ func (r *BuildkitBuilderReconciler) buildPodSpec(spec *templatev1alpha1.Buildkit
 		ImagePullSecrets: []corev1.LocalObjectReference{},
 		Containers: []corev1.Container{
 			{
-				Name:  "buildkitd",
-				Image: spec.BuildkitImage,
-				Args:  []string{"--config", "/etc/buildkit/buildkitd.toml"},
+				Name:            "buildkitd",
+				Image:           spec.BuildkitImage,
+				Args:            buildkitArgs,
+				SecurityContext: containerSecurityContext,
 				Ports: []corev1.ContainerPort{
 					{Name: "buildkit", ContainerPort: 1234},
 					{Name: "metrics", ContainerPort: 1235},

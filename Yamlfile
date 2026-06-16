@@ -1,0 +1,35 @@
+# syntax=ghcr.io/builderhub/yamlfile:latest
+apiVersion: v1alpha1
+targets:
+  builder:
+    from: golang:1.25-alpine
+    steps:
+      - workdir:
+          path: /workspace
+      - run:
+          command: apk add --no-cache git ca-certificates tzdata
+      - copy:
+          src: ["go.mod", "go.sum"]
+          dest: "."
+      - run:
+          command: go mod download
+      - copy:
+          src: ["."]
+          dest: "."
+      - arg:
+          vars:
+            TARGETARCH: ""
+      - run:
+          command: "CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags=\"-w -s\" -o manager cmd/main.go"
+          env:
+            CGO_ENABLED: "0"
+            GOOS: "linux"
+  default:
+    from: gcr.io/distroless/static:nonroot
+    steps:
+      - workdir:
+          path: /
+      - copy:
+          from: builder
+          src: ["/workspace/manager"]
+          dest: "/"

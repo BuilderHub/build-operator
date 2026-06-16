@@ -1,5 +1,10 @@
 # BuilderHub BuildKit Operator - multi-stage, distroless, multi-arch
-# Build: docker buildx build --platform linux/amd64,linux/arm64 -t build-operator .
+#
+# NOTE: The primary build definition has been converted to Yamlfile (github.com/BuilderHub/Yamlfile).
+# See ./Yamlfile at the repo root.
+#
+# Legacy: Build: docker buildx build --platform linux/amd64,linux/arm64 -t build-operator .
+# Preferred: docker buildx build -f Yamlfile --platform linux/amd64,linux/arm64 -t build-operator .
 
 # Build stage
 FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS builder

@@ -1,83 +1,35 @@
 # syntax=ghcr.io/builderhub/yamlfile:latest
-#
-# BuilderHub BuildKit Operator - multi-stage, distroless, multi-arch
-# Converted from Dockerfile to Yamlfile (v1alpha1)
-#
-# Build:
-#   docker buildx build -f Yamlfile --platform linux/amd64,linux/arm64 -t build-operator .
-#
-# Local build (uses the syntax directive above to select the frontend):
-#   docker buildx build -f Yamlfile -t build-operator --load .
-#
-# Requires the yamlfile BuildKit frontend (automatically pulled via the # syntax line).
-
 apiVersion: v1alpha1
-
 targets:
-  # Cross-compile stage (mirrors the original "builder" stage).
-  # We rely on BuildKit-injected TARGETARCH (available via build args / env during RUN).
-  # The golang image for the target's platform is used; cross-compilation still works.
   builder:
     from: golang:1.25-alpine
     steps:
       - workdir:
           path: /workspace
-
-      # Provide the base image's Go-related environment (PATH to /usr/local/go/bin + /go/bin,
-      # GOPATH) because the current yamlfile v1alpha1 frontend does not automatically inherit
-      # the full ENV layer from an external `from:` image the same way native Dockerfile does.
-      # Confirmed via `docker run golang:1.25-alpine env`. The `env:` step does st.AddEnv
-      # + updates image config so later run: steps (and any shell $PATH) see it.
-      - env:
-          vars:
-            PATH: /go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-            GOPATH: /go
-
-      # Install build deps (cache-friendly layer before source copy)
       - run:
           command: apk add --no-cache git ca-certificates tzdata
-
-      # Go module download (cache friendly)
       - copy:
           src: ["go.mod", "go.sum"]
           dest: "."
-
       - run:
           command: go mod download
-
-      # Full source
       - copy:
           src: ["."]
           dest: "."
-
-      # Declare TARGETARCH for documentation / fallback; actual value comes from
-      # buildx --platform (injected by BuildKit into build args for the frontend).
       - arg:
           vars:
             TARGETARCH: ""
-
-      # Build the static binary for the target arch.
       - run:
           command: "CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags=\"-w -s\" -o manager cmd/main.go"
           env:
             CGO_ENABLED: "0"
             GOOS: "linux"
-
-  # Final distroless runtime image.
-  # Named "default" so it is selected automatically when no --target is passed.
   default:
     from: gcr.io/distroless/static:nonroot
     steps:
       - workdir:
           path: /
-
       - copy:
           from: builder
           src: ["/workspace/manager"]
           dest: "/"
-
-      # Note: USER/ENTRYPOINT/Cmd metadata steps are not yet implemented in v1alpha1
-      # (see https://builderhub.github.io/Yamlfile/syntax-reference/ "Future" section).
-      # The deployment (config/manager/manager.yaml) explicitly sets command + securityContext
-      # (runAsUser 65532 / nonroot), so the resulting image works without them.
-      # The underlying distroless layers still provide the nonroot user account in /etc/passwd.

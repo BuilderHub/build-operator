@@ -60,8 +60,8 @@ run: manifests generate ## Run against the configured Kubernetes cluster (--lead
 
 ##@ Docker
 .PHONY: docker-build
-docker-build: ## Build Docker image
-	docker build -t $(IMG) .
+docker-build: ## Build Docker image (uses Yamlfile + buildx for custom frontend support)
+	docker buildx build -f Yamlfile -t $(IMG) --load .
 
 .PHONY: docker-push
 docker-push: ## Push Docker image

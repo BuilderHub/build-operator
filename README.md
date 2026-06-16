@@ -140,9 +140,10 @@ build-operator/
 │   ├── rbac/
 │   ├── manager/
 │   └── samples/            # Example CRs
-├── helm/build-operator/    # Helm chart
 └── Makefile
 ```
+
+Helm charts for deployment are maintained in [BuilderHub/helm](https://github.com/BuilderHub/helm) under `charts/build-operator`.
 
 ## License
 

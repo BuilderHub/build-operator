@@ -40,9 +40,10 @@ type BuildkitBuilderReconciler struct {
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=traefik.io,resources=ingressroutes;ingressroutetcps,verbs=get;list;watch;create;update;patch;delete
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *BuildkitBuilderReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -52,6 +53,7 @@ func (r *BuildkitBuilderReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.Service{}).
 		Owns(&corev1.PersistentVolumeClaim{}).
+		Owns(&corev1.Secret{}).
 		Complete(r)
 }
 
@@ -181,6 +183,9 @@ func (r *BuildkitBuilderReconciler) reconcilePersistent(ctx context.Context, b *
 	if err := r.createOrUpdateService(ctx, clientSvc); err != nil {
 		return ctrl.Result{}, err
 	}
+	if err := r.reconcileExposure(ctx, b); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Create PVC if cache type is pvc
 	if spec.CacheConfig.Type == templatev1alpha1.CacheTypePVC && spec.CacheConfig.PVC != nil {
@@ -243,6 +248,9 @@ func (r *BuildkitBuilderReconciler) reconcileSleepy(ctx context.Context, b *buil
 	// Ensure NodePort Service for external access
 	clientSvc := nodePortServiceForBuilder(b)
 	if err := r.createOrUpdateService(ctx, clientSvc); err != nil {
+		return ctrl.Result{}, err
+	}
+	if err := r.reconcileExposure(ctx, b); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -372,6 +380,17 @@ func (r *BuildkitBuilderReconciler) buildPodSpec(spec *templatev1alpha1.Buildkit
 	})
 	volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: "buildkitd-config", MountPath: "/etc/buildkit"})
 
+	// mTLS server certificate (operator-managed) when the builder is exposed.
+	if exposureEnabled(b) {
+		volumes = append(volumes, corev1.Volume{
+			Name: "builder-tls",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{SecretName: builderTLSSecretName(b)},
+			},
+		})
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: "builder-tls", MountPath: tlsMountPath, ReadOnly: true})
+	}
+
 	// Cache volume (PVC or emptyDir)
 	if spec.CacheConfig.Type == templatev1alpha1.CacheTypePVC && pvcName != nil {
 		volumes = append(volumes, corev1.Volume{
@@ -462,10 +481,6 @@ func defaultBuildkitdToml() string {
 
 [worker.oci]
   enabled = true
-
-[registry]
-  [registry."docker.io"]
-    mirrors = ["docker.io"]
 `
 }
 
@@ -477,6 +492,12 @@ func (r *BuildkitBuilderReconciler) ensureBuildkitdConfigMap(ctx context.Context
 	}
 	if !strings.Contains(buildkitdToml, "tcp://") {
 		buildkitdToml = "[grpc]\n  address = [ \"tcp://0.0.0.0:1234\" ]\n\n" + buildkitdToml
+	}
+	// Enable mTLS on buildkitd's gRPC listener when the builder is exposed. Traefik
+	// passes the TLS connection straight through, so buildkitd terminates it and
+	// verifies client certificates against the operator-managed CA.
+	if exposureEnabled(b) && !strings.Contains(buildkitdToml, "[grpc.tls]") {
+		buildkitdToml += fmt.Sprintf("\n[grpc.tls]\n  cert = \"%s/tls.crt\"\n  key = \"%s/tls.key\"\n  ca = \"%s/ca.crt\"\n", tlsMountPath, tlsMountPath, tlsMountPath)
 	}
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{

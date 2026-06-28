@@ -212,6 +212,8 @@ func (r *BuildkitBuilderReconciler) updateStatus(ctx context.Context, b *buildki
 	b.Status.Phase = phase
 	b.Status.Endpoint = endpoint
 	b.Status.NodePort = nodePort
+	b.Status.ExternalEndpoint = externalEndpointForBuilder(b)
+	b.Status.TLSSecretName = exposureTLSSecretName(b)
 	b.Status.ReadyReplicas = readyReplicas
 	b.Status.DesiredReplicas = desiredReplicas
 	ready := phase == "Ready"
@@ -236,6 +238,8 @@ func (r *BuildkitBuilderReconciler) updateStatusWithLastScaled(ctx context.Conte
 	b.Status.Phase = phase
 	b.Status.Endpoint = endpoint
 	b.Status.NodePort = nodePort
+	b.Status.ExternalEndpoint = externalEndpointForBuilder(b)
+	b.Status.TLSSecretName = exposureTLSSecretName(b)
 	b.Status.ReadyReplicas = readyReplicas
 	b.Status.DesiredReplicas = desiredReplicas
 	b.Status.LastScaledAt = lastScaled

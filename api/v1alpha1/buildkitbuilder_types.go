@@ -15,6 +15,46 @@ const (
 	BuilderModeSleepy     BuilderMode = "sleepy"
 )
 
+// IngressControllerType identifies the ingress controller used for external exposure.
+// +kubebuilder:validation:Enum=traefik
+type IngressControllerType string
+
+const (
+	IngressControllerTraefik IngressControllerType = "traefik"
+)
+
+// ExposureConfig defines how a builder is exposed on the internet via ingress.
+//
+// Exposure uses mutual TLS end-to-end: buildkitd terminates TLS itself (gRPC over
+// HTTP/2) and the ingress controller routes purely on the TLS SNI via passthrough
+// (no edge termination). The operator manages a per-namespace CA and issues the
+// builder's server certificate automatically; clients authenticate with a
+// certificate signed by the same CA (minted by build-api).
+//
+// +kubebuilder:object:generate=true
+type ExposureConfig struct {
+	// Enabled turns on Traefik IngressRouteTCP (SNI passthrough) exposure for this builder.
+	// +kubebuilder:default=false
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Host is the external DNS name, e.g. builder-foo.build.example.com.
+	// It is used both for SNI routing and as the server certificate SAN.
+	Host string `json:"host,omitempty"`
+
+	// IngressController selects the ingress implementation (only traefik supported).
+	// +kubebuilder:default=traefik
+	IngressController IngressControllerType `json:"ingressController,omitempty"`
+
+	// EntryPoint is the Traefik entrypoint the passthrough route binds to.
+	// Defaults to "websecure".
+	// +optional
+	EntryPoint string `json:"entryPoint,omitempty"`
+
+	// Annotations are merged onto the IngressRouteTCP (e.g. external-dns).
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
 // BuildkitBuilderSpec defines the desired state of BuildkitBuilder
 //
 // +kubebuilder:object:generate=true
@@ -46,6 +86,10 @@ type BuildkitBuilderSpec struct {
 	// Labels for service discovery and routing in BuilderHub frontend
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// Exposure configures internet-facing ingress for this builder.
+	// +optional
+	Exposure *ExposureConfig `json:"exposure,omitempty"`
 }
 
 // BuildkitBuilderStatus defines the observed state of BuildkitBuilder
@@ -59,6 +103,15 @@ type BuildkitBuilderStatus struct {
 	// NodePort is the allocated NodePort for external access (connect via <node-ip>:NodePort)
 	// +optional
 	NodePort int32 `json:"nodePort,omitempty"`
+
+	// ExternalEndpoint is the internet-facing BuildKit address when exposure is enabled (e.g. tcp://host:443)
+	// +optional
+	ExternalEndpoint string `json:"externalEndpoint,omitempty"`
+
+	// TLSSecretName is the operator-managed Secret holding the builder's mTLS server
+	// certificate (ca.crt, tls.crt, tls.key) when exposure is enabled.
+	// +optional
+	TLSSecretName string `json:"tlsSecretName,omitempty"`
 
 	// Conditions represent the latest available observations
 	// +optional
@@ -97,6 +150,7 @@ const (
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Endpoint",type=string,JSONPath=`.status.endpoint`
 // +kubebuilder:printcolumn:name="NodePort",type=integer,JSONPath=`.status.nodePort`
+// +kubebuilder:printcolumn:name="External",type=string,JSONPath=`.status.externalEndpoint`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type BuildkitBuilder struct {
 	metav1.TypeMeta   `json:",inline"`

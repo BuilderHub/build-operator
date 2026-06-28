@@ -27,6 +27,9 @@ spec:
     - jsonPath: .status.nodePort
       name: NodePort
       type: integer
+    - jsonPath: .status.externalEndpoint
+      name: External
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -56,6 +59,39 @@ spec:
           spec:
             description: BuildkitBuilderSpec defines the desired state of BuildkitBuilder
             properties:
+              exposure:
+                description: Exposure configures internet-facing ingress for this
+                  builder.
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations are merged onto the IngressRouteTCP (e.g.
+                      external-dns).
+                    type: object
+                  enabled:
+                    default: false
+                    description: Enabled turns on Traefik IngressRouteTCP (SNI passthrough)
+                      exposure for this builder.
+                    type: boolean
+                  entryPoint:
+                    description: |-
+                      EntryPoint is the Traefik entrypoint the passthrough route binds to.
+                      Defaults to "websecure".
+                    type: string
+                  host:
+                    description: |-
+                      Host is the external DNS name, e.g. builder-foo.build.example.com.
+                      It is used both for SNI routing and as the server certificate SAN.
+                    type: string
+                  ingressController:
+                    default: traefik
+                    description: IngressController selects the ingress implementation
+                      (only traefik supported).
+                    enum:
+                    - traefik
+                    type: string
+                type: object
               idleTimeoutSeconds:
                 default: 300
                 description: |-
@@ -1273,6 +1309,10 @@ spec:
                 description: Endpoint is the BuildKit TCP address for cluster-internal
                   use (e.g. tcp://10.0.0.1:1234)
                 type: string
+              externalEndpoint:
+                description: ExternalEndpoint is the internet-facing BuildKit address
+                  when exposure is enabled (e.g. tcp://host:443)
+                type: string
               lastScaledAt:
                 description: LastScaledAt is the last time the controller scaled (sleepy)
                 format: date-time
@@ -1289,6 +1329,11 @@ spec:
                 description: ReadyReplicas for persistent/sleepy mode
                 format: int32
                 type: integer
+              tlsSecretName:
+                description: |-
+                  TLSSecretName is the operator-managed Secret holding the builder's mTLS server
+                  certificate (ca.crt, tls.crt, tls.key) when exposure is enabled.
+                type: string
             type: object
         type: object
     served: true

@@ -10,6 +10,7 @@ rules:
   - configmaps
   - persistentvolumeclaims
   - pods
+  - secrets
   - services
   verbs:
   - create
@@ -26,14 +27,6 @@ rules:
   verbs:
   - create
   - patch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - apps
   resources:
@@ -79,4 +72,17 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - traefik.io
+  resources:
+  - ingressroutes
+  - ingressroutetcps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
   - watch

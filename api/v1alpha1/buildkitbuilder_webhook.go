@@ -32,7 +32,21 @@ func (r *BuildkitBuilder) Default(ctx context.Context, obj *BuildkitBuilder) err
 		threeHundred := int32(300)
 		obj.Spec.IdleTimeoutSeconds = &threeHundred
 	}
+	defaultExposure(obj)
 	return nil
+}
+
+func defaultExposure(obj *BuildkitBuilder) {
+	if obj.Spec.Exposure == nil || !obj.Spec.Exposure.Enabled {
+		return
+	}
+	if obj.Spec.Exposure.IngressController == "" {
+		obj.Spec.Exposure.IngressController = IngressControllerTraefik
+	}
+	if obj.Spec.Exposure.EntryPoint == "" {
+		// mTLS passthrough always rides the TLS entrypoint.
+		obj.Spec.Exposure.EntryPoint = "websecure"
+	}
 }
 
 // +kubebuilder:webhook:path=/validate-builder-hub-dev-v1alpha1-buildkitbuilder,mutating=false,failurePolicy=fail,sideEffects=None,groups=builder-hub.dev,resources=buildkitbuilders,verbs=create;update,versions=v1alpha1,name=vbuildkitbuilder.kb.io,admissionReviewVersions=v1
@@ -63,6 +77,25 @@ func (r *BuildkitBuilder) validate() error {
 	}
 	if r.Spec.TemplateRef != nil && *r.Spec.TemplateRef == "" {
 		return fmt.Errorf("templateRef cannot be empty")
+	}
+	if err := r.validateExposure(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *BuildkitBuilder) validateExposure() error {
+	if r.Spec.Exposure == nil || !r.Spec.Exposure.Enabled {
+		return nil
+	}
+	if r.Spec.Exposure.Host == "" {
+		return fmt.Errorf("exposure.host is required when exposure is enabled")
+	}
+	switch r.Spec.Exposure.IngressController {
+	case "", IngressControllerTraefik:
+		// ok
+	default:
+		return fmt.Errorf("unsupported ingressController %q (only traefik is supported)", r.Spec.Exposure.IngressController)
 	}
 	return nil
 }

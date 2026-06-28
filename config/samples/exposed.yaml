@@ -1,0 +1,23 @@
+# BuildkitBuilder exposed on the internet via Traefik IngressRouteTCP (SNI passthrough).
+#
+# buildkitd terminates mutual TLS itself; the operator manages a per-namespace CA
+# and issues the server certificate (SAN = spec.exposure.host) automatically.
+# Clients connect with a certificate signed by the same CA (minted by build-api), e.g.:
+#
+#   docker buildx create --name remote --driver remote \
+#     --driver-opt cacert=ca.pem,cert=client.pem,key=client-key.pem \
+#     --driver-opt servername=exposed-builder.build.example.com \
+#     tcp://exposed-builder.build.example.com:443
+apiVersion: builder-hub.dev/v1alpha1
+kind: BuildkitBuilder
+metadata:
+  name: exposed-builder
+  namespace: buildkit
+spec:
+  templateRef: default-template
+  mode: persistent
+  replicas: 1
+  exposure:
+    enabled: true
+    host: exposed-builder.build.example.com
+    ingressController: traefik
